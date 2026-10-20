@@ -8,16 +8,17 @@ Namespace: ``http://www.w3.org/ns/dcat#``
 
 from collections.abc import Sequence
 from datetime import date, datetime
-import rdflib
 from typing import Annotated
 
-from . import dcterms
+import rdflib
 
+from . import dcterms
 from .dcterms import PeriodOfTime
 from .foaf import Agent
-from .rdf import RDF, RDFURIRef, RDFRef, RDFType, uri
+from .rdf import RDF, RDFRef, RDFType, RDFURIRef, uri
 from .rdfs import Resource
 from .vcard import Kind
+
 
 class Catalogue(RDF, frozen=True):
     """
@@ -79,7 +80,9 @@ class Catalogue(RDF, frozen=True):
         if len(dataset) == 0:
             dataset = None
         # description
-        description_objects = graph.objects(node, cls._get_rdf_property("description"))
+        description_objects = graph.objects(
+            node, cls._get_rdf_property("description")
+        )
         descriptions = [str(obj) for obj in description_objects]
         if len(descriptions) > 1:
             description = descriptions
@@ -88,19 +91,49 @@ class Catalogue(RDF, frozen=True):
         else:
             description = None
         # publisher
-        publisher_object = graph.value(node, cls._get_rdf_property("publisher"))
+        publisher_object = graph.value(
+            node, cls._get_rdf_property("publisher")
+        )
         agent_type = Agent.get_rdf_type()
         if agent_type is str:
             agent_type = [agent_type]
 
-        def flatten(xss): return [x for xs in xss for x in xs]
-        if len(flatten([graph.triples((publisher_object, rdflib.RDF.type, rdflib.URIRef(t))) for t in agent_type])) > 0:
-            publisher = Agent.from_graph(publisher_object, graph) if publisher_object is not None else None
+        def flatten(xss):
+            return [x for xs in xss for x in xs]
+
+        if (
+            len(
+                flatten(
+                    [
+                        graph.triples(
+                            (
+                                publisher_object,
+                                rdflib.RDF.type,
+                                rdflib.URIRef(t),
+                            )
+                        )
+                        for t in agent_type
+                    ]
+                )
+            )
+            > 0
+        ):
+            publisher = (
+                Agent.from_graph(publisher_object, graph)
+                if publisher_object is not None
+                else None
+            )
         else:
-            publisher = uri(str(publisher_object)) if publisher_object is not None else None
+            publisher = (
+                uri(str(publisher_object))
+                if publisher_object is not None
+                else None
+            )
         # service
         service_objects = graph.objects(node, cls._get_rdf_property("service"))
-        service = [DataService.from_graph(obj, graph) for obj in service_objects]
+        service = [
+            DataService.from_graph(obj, graph) for obj in service_objects
+        ]
         if len(service) == 0:
             service = None
         # title
@@ -131,7 +164,9 @@ class CataloguedResource(Resource, frozen=True):
     See also: https://www.w3.org/TR/vocab-dcat-3/#Class:Resource
     """
 
-    rdf_type: RDFType = Resource.get_rdf_type(extra="http://www.w3.org/ns/dcat#Resource")
+    rdf_type: RDFType = Resource.get_rdf_type(
+        extra="http://www.w3.org/ns/dcat#Resource"
+    )
 
     contact_point: Annotated[
         Sequence[RDFRef[Kind]] | None,
@@ -177,8 +212,12 @@ class CataloguedResource(Resource, frozen=True):
     def from_graph(cls, id: str | rdflib.Node, graph: rdflib.Graph):
         node, rdf_id = cls._node_id(id)
         # contact_point
-        contact_point_objects = graph.objects(node, cls._get_rdf_property("contact_point"))
-        contact_point = [Kind.from_graph(obj, graph) for obj in contact_point_objects]
+        contact_point_objects = graph.objects(
+            node, cls._get_rdf_property("contact_point")
+        )
+        contact_point = [
+            Kind.from_graph(obj, graph) for obj in contact_point_objects
+        ]
         if len(contact_point) == 0:
             contact_point = None
         # creator
@@ -193,7 +232,9 @@ class CataloguedResource(Resource, frozen=True):
         else:
             conforms_to = str(conforms_to) if conforms_to else None
         # description
-        description_objects = graph.objects(node, cls._get_rdf_property("description"))
+        description_objects = graph.objects(
+            node, cls._get_rdf_property("description")
+        )
         descriptions = [str(obj) for obj in description_objects]
         if len(descriptions) > 1:
             description = descriptions
@@ -202,16 +243,26 @@ class CataloguedResource(Resource, frozen=True):
         else:
             description = None
         # is_referenced_by
-        is_referenced_by_objects = graph.objects(node, cls._get_rdf_property("is_referenced_by"))
-        is_referenced_by = [CataloguedResource.from_graph(obj, graph) for obj in is_referenced_by_objects]
+        is_referenced_by_objects = graph.objects(
+            node, cls._get_rdf_property("is_referenced_by")
+        )
+        is_referenced_by = [
+            CataloguedResource.from_graph(obj, graph)
+            for obj in is_referenced_by_objects
+        ]
         if len(is_referenced_by) == 0:
             is_referenced_by = None
         # licence
         licence_object = graph.value(node, cls._get_rdf_property("licence"))
         licence = str(licence_object) if licence_object is not None else None
         # qualified_relation
-        qualified_relation_objects = graph.objects(node, cls._get_rdf_property("qualified_relation"))
-        qualified_relation = [Relationship.from_graph(obj, graph) for obj in qualified_relation_objects]
+        qualified_relation_objects = graph.objects(
+            node, cls._get_rdf_property("qualified_relation")
+        )
+        qualified_relation = [
+            Relationship.from_graph(obj, graph)
+            for obj in qualified_relation_objects
+        ]
         if len(qualified_relation) == 0:
             qualified_relation = None
         # title
@@ -245,7 +296,9 @@ class Dataset(CataloguedResource, frozen=True):
     See also: https://www.w3.org/TR/vocab-dcat-3/#Class:Dataset
     """
 
-    rdf_type: RDFType = CataloguedResource.get_rdf_type(extra="http://www.w3.org/ns/dcat#Dataset")
+    rdf_type: RDFType = CataloguedResource.get_rdf_type(
+        extra="http://www.w3.org/ns/dcat#Dataset"
+    )
 
     distribution: Annotated[
         Sequence[RDFRef["Distribution"]] | None,
@@ -254,7 +307,7 @@ class Dataset(CataloguedResource, frozen=True):
 
     issued: Annotated[
         date | datetime | None,
-        {"rdf_property": "http://purl.org/dc/terms/issued"}
+        {"rdf_property": "http://purl.org/dc/terms/issued"},
     ] = None
 
     spatial: Annotated[
@@ -273,21 +326,33 @@ class Dataset(CataloguedResource, frozen=True):
         # CataloguedResource
         catalogued_resource = CataloguedResource.from_graph(node, graph)
         # distribution
-        distribution_objects = graph.objects(node, cls._get_rdf_property("distribution"))
-        distribution = [Distribution.from_graph(obj, graph) for obj in distribution_objects]
+        distribution_objects = graph.objects(
+            node, cls._get_rdf_property("distribution")
+        )
+        distribution = [
+            Distribution.from_graph(obj, graph) for obj in distribution_objects
+        ]
         if len(distribution) == 0:
             distribution = None
         # issued
         issued_object = graph.value(node, cls._get_rdf_property("issued"))
-        issued = datetime.fromisoformat(str(issued_object)) if issued_object is not None else None
+        issued = (
+            datetime.fromisoformat(str(issued_object))
+            if issued_object is not None
+            else None
+        )
         # spatial
         spatial_objects = graph.objects(node, cls._get_rdf_property("spatial"))
         spatial = [Location.from_graph(obj, graph) for obj in spatial_objects]
         if len(spatial) == 0:
             spatial = None
         # temporal
-        temporal_objects = graph.objects(node, cls._get_rdf_property("temporal"))
-        temporal = [PeriodOfTime.from_graph(obj, graph) for obj in temporal_objects]
+        temporal_objects = graph.objects(
+            node, cls._get_rdf_property("temporal")
+        )
+        temporal = [
+            PeriodOfTime.from_graph(obj, graph) for obj in temporal_objects
+        ]
         if len(temporal) == 0:
             temporal = None
         # Dataset
@@ -309,7 +374,9 @@ class DataService(CataloguedResource, frozen=True):
     See also: https://www.w3.org/TR/vocab-dcat-3/#Class:Data_Service
     """
 
-    rdf_type: RDFType = CataloguedResource.get_rdf_type(extra="http://www.w3.org/ns/dcat#DataService")
+    rdf_type: RDFType = CataloguedResource.get_rdf_type(
+        extra="http://www.w3.org/ns/dcat#DataService"
+    )
 
     endpoint_description: Annotated[
         Sequence[RDFRef[Resource] | str] | RDFRef[Resource] | str | None,
@@ -329,7 +396,9 @@ class DataService(CataloguedResource, frozen=True):
         catalogued_resource_dict: dict = catalogued_resource.model_dump()
         catalogued_resource_dict.pop("rdf_type")
         # endpoint_description
-        endpoint_desc_objects = graph.objects(node, cls._get_rdf_property("endpoint_description"))
+        endpoint_desc_objects = graph.objects(
+            node, cls._get_rdf_property("endpoint_description")
+        )
         endpoint_description = [str(obj) for obj in endpoint_desc_objects]
         if len(endpoint_description) > 1:
             endpoint_description = endpoint_description
@@ -338,7 +407,9 @@ class DataService(CataloguedResource, frozen=True):
         else:
             endpoint_description = None
         # endpoint_url
-        endpoint_url_objects = graph.objects(node, cls._get_rdf_property("endpoint_url"))
+        endpoint_url_objects = graph.objects(
+            node, cls._get_rdf_property("endpoint_url")
+        )
         endpoint_url = [str(obj) for obj in endpoint_url_objects]
         if len(endpoint_url) > 1:
             endpoint_url = endpoint_url
@@ -398,12 +469,18 @@ class Distribution(RDF, frozen=True):
     def from_graph(cls, id: str | rdflib.Node, graph: rdflib.Graph):
         node, rdf_id = cls._node_id(id)
         # access_service
-        service_objects = graph.objects(node, cls._get_rdf_property("access_service"))
-        service = [DataService.from_graph(obj, graph) for obj in service_objects]
+        service_objects = graph.objects(
+            node, cls._get_rdf_property("access_service")
+        )
+        service = [
+            DataService.from_graph(obj, graph) for obj in service_objects
+        ]
         if len(service) == 0:
             service = None
         # access_url
-        access_url_objects = graph.objects(node, cls._get_rdf_property("access_url"))
+        access_url_objects = graph.objects(
+            node, cls._get_rdf_property("access_url")
+        )
         access_url = [str(obj) for obj in access_url_objects]
         if len(access_url) > 1:
             access_url = access_url
@@ -418,7 +495,9 @@ class Distribution(RDF, frozen=True):
         else:
             conforms_to = str(conforms_to) if conforms_to else None
         # description
-        description_objects = graph.objects(node, cls._get_rdf_property("description"))
+        description_objects = graph.objects(
+            node, cls._get_rdf_property("description")
+        )
         descriptions = [str(obj) for obj in description_objects]
         if len(descriptions) > 1:
             description = descriptions

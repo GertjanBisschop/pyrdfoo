@@ -6,8 +6,9 @@ Ontology documentation: https://www.w3.org/TR/vcard-rdf/
 Namespace: ``http://www.w3.org/2006/vcard/ns#``
 """
 
-import rdflib
 from typing import Annotated
+
+import rdflib
 
 from .rdf import RDF, RDFRef, RDFType
 
@@ -28,7 +29,9 @@ class Kind(RDF, frozen=True):
     @classmethod
     def from_graph(cls, id: str | rdflib.Node, graph: rdflib.Graph):
         node, rdf_id = cls._node_id(id)
-        fn = graph.value(node, rdflib.URIRef("http://www.w3.org/2006/vcard/ns#Kind"))
+        fn = graph.value(
+            node, rdflib.URIRef("http://www.w3.org/2006/vcard/ns#Kind")
+        )
         return Kind(
             rdf_id=rdf_id,
             fn=str(fn),

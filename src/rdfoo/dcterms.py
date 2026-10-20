@@ -6,10 +6,10 @@ Ontology documentation: https://www.dublincore.org/specifications/dublin-core/dc
 Namespace: ``http://purl.org/dc/terms/``
 """
 
-import rdflib
-
 from datetime import date, datetime
 from typing import Annotated
+
+import rdflib
 
 from .rdf import RDF, RDFType
 
@@ -53,10 +53,18 @@ class PeriodOfTime(RDF, frozen=True):
         node, rdf_id = cls._node_id(id)
         # start_date
         start_obj = graph.value(node, cls._get_rdf_property("start_date"))
-        start_date = datetime.fromisoformat(str(start_obj)) if start_obj is not None else None
+        start_date = (
+            datetime.fromisoformat(str(start_obj))
+            if start_obj is not None
+            else None
+        )
         # end_date
         end_obj = graph.value(node, cls._get_rdf_property("end_date"))
-        end_date = datetime.fromisoformat(str(end_obj)) if end_obj is not None else None
+        end_date = (
+            datetime.fromisoformat(str(end_obj))
+            if end_obj is not None
+            else None
+        )
         # PeriodOfTime
         return PeriodOfTime(
             rdf_id=rdf_id,

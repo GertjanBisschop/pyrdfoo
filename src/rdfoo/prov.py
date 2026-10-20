@@ -6,16 +6,17 @@ Documentation: https://www.w3.org/TR/prov-o/
 Namespace: ``http://www.w3.org/ns/prov#``
 """
 
-import rdflib
-
+from collections.abc import Callable, Sequence
 from datetime import datetime
+from typing import Annotated, Any, ClassVar
+
+import rdflib
 from pydantic import BaseModel, BeforeValidator, PlainSerializer
-from typing import Annotated, Any, Callable, ClassVar, Sequence
 
 from .rdf import (
     RDF,
-    RDFType,
     RDFRef,
+    RDFType,
     RDFURIRef,
     graph_node_rdf_types,
 )
@@ -31,7 +32,9 @@ def entity_serializer(value: list[BaseModel] | BaseModel | None) -> Any:
     return None
 
 
-def build_entity_validator(base_entity_type: Any = None) -> Callable[[Any], Any]:
+def build_entity_validator(
+    base_entity_type: Any = None,
+) -> Callable[[Any], Any]:
     """Builder for generic entity validator, allows validation of RDFRef[Entity] where the specific Entity could be of type Entity or any of its bases."""
 
     def validate_entity(value: Any, entity_type: Any) -> Any:
@@ -39,7 +42,9 @@ def build_entity_validator(base_entity_type: Any = None) -> Callable[[Any], Any]
             return value
         elif isinstance(value, dict):
             if "rdf_type" not in value:
-                raise ValueError(f'entity should have a "rdf_type" field, got: {value}')
+                raise ValueError(
+                    f'entity should have a "rdf_type" field, got: {value}'
+                )
 
             rdf_types = value.pop("rdf_type")
             entity = Entity._entity_from_rdf_type(rdf_types, Entity)
@@ -93,7 +98,8 @@ class Entity(RDF, frozen=True):
     """An account of the resource."""
 
     title: Annotated[
-        Sequence[str] | str | None, {"rdf_property": "http://purl.org/dc/terms/title"}
+        Sequence[str] | str | None,
+        {"rdf_property": "http://purl.org/dc/terms/title"},
     ] = None
     """ A name given to the resource. """
 
@@ -162,7 +168,9 @@ class Entity(RDF, frozen=True):
             Entity._RDF_TYPE_MAP[rdf_type_set] = cls
 
     @classmethod
-    def _entity_from_rdf_type(cls, rdf_types: RDFType | None, alt_entity: Any = None):
+    def _entity_from_rdf_type(
+        cls, rdf_types: RDFType | None, alt_entity: Any = None
+    ):
         if alt_entity is None:
             alt_entity = Entity
 
@@ -298,12 +306,14 @@ class Agent(Entity, frozen=True):
     """ A name for some thing. """
 
     mbox: Annotated[
-        RDFURIRef | str | None, {"rdf_property": "http://xmlns.com/foaf/0.1/mbox"}
+        RDFURIRef | str | None,
+        {"rdf_property": "http://xmlns.com/foaf/0.1/mbox"},
     ] = None
     """ A personal mailbox, ie. an Internet mailbox associated with exactly one owner, the first owner of this mailbox. """
 
     acted_on_behalf_of: Annotated[
-        RDFRef["Agent"] | None, {"rdf_property": str(rdflib.PROV.actedOnBehalfOf)}
+        RDFRef["Agent"] | None,
+        {"rdf_property": str(rdflib.PROV.actedOnBehalfOf)},
     ] = None
     """ Delegation is the assignment of authority and responsibility to an agent (by itself or by another agent) to carry out a specific activity as a delegate or representative, while the agent it acts on behalf of retains some responsibility for the outcome of the delegated work. For example, a student acted on behalf of his supervisor, who acted on behalf of the department chair, who acted on behalf of the university; all those agents are responsible in some way for the activity that took place but we do not say explicitly who bears responsibility and to what degree. """
 
@@ -328,11 +338,16 @@ class Agent(Entity, frozen=True):
             node, cls._get_rdf_property("acted_on_behalf_of")
         )
         acted_on_behalf_of = (
-            Agent.from_graph(acted_on_behalf_of, graph) if acted_on_behalf_of else None
+            Agent.from_graph(acted_on_behalf_of, graph)
+            if acted_on_behalf_of
+            else None
         )
 
         return Agent(
-            **entity_dict, name=name, mbox=mbox, acted_on_behalf_of=acted_on_behalf_of
+            **entity_dict,
+            name=name,
+            mbox=mbox,
+            acted_on_behalf_of=acted_on_behalf_of,
         )
 
 
@@ -398,24 +413,34 @@ class Activity(Entity, frozen=True):
     """Usage is the beginning of utilizing an entity by an activity. Before usage, the activity had not begun to utilize this entity and could not have been affected by the entity."""
 
     @classmethod
-    def from_graph(cls, id: str | rdflib.Node, graph: rdflib.Graph) -> "Activity":
+    def from_graph(
+        cls, id: str | rdflib.Node, graph: rdflib.Graph
+    ) -> "Activity":
         node, _ = cls._node_id(id)
 
         # entity
         entity_dict: dict = Entity.from_graph(node, graph).to_dict()
         entity_dict.pop("rdf_type")
         # ended_at_time
-        ended_at_time = graph.value(node, cls._get_rdf_property("ended_at_time"))
+        ended_at_time = graph.value(
+            node, cls._get_rdf_property("ended_at_time")
+        )
         ended_at_time = (
-            datetime.fromisoformat(str(ended_at_time)) if ended_at_time else None
+            datetime.fromisoformat(str(ended_at_time))
+            if ended_at_time
+            else None
         )
         # generated
         generated = cls._entities_from_graph_property(
             graph, node, cls._get_rdf_property("generated"), Entity
         )
         # was_associated_with
-        waw_objects = graph.objects(node, cls._get_rdf_property("was_associated_with"))
-        was_associated_with = [Agent.from_graph(waw, graph) for waw in waw_objects]
+        waw_objects = graph.objects(
+            node, cls._get_rdf_property("was_associated_with")
+        )
+        was_associated_with = [
+            Agent.from_graph(waw, graph) for waw in waw_objects
+        ]
         if not was_associated_with:
             was_associated_with = None
         elif len(was_associated_with) == 1:
@@ -425,28 +450,42 @@ class Activity(Entity, frozen=True):
             graph, node, cls._get_rdf_property("was_informed_by"), Activity
         )
         # qualified_association
-        qa_objects = graph.objects(node, cls._get_rdf_property("qualified_association"))
-        qualified_association = [Association.from_graph(qa, graph) for qa in qa_objects]
+        qa_objects = graph.objects(
+            node, cls._get_rdf_property("qualified_association")
+        )
+        qualified_association = [
+            Association.from_graph(qa, graph) for qa in qa_objects
+        ]
         if not qualified_association:
             qualified_association = None
         elif len(qualified_association) == 1:
             qualified_association = qualified_association[0]
         # started_at_time
-        started_at_time = graph.value(node, cls._get_rdf_property("started_at_time"))
+        started_at_time = graph.value(
+            node, cls._get_rdf_property("started_at_time")
+        )
         started_at_time = (
-            datetime.fromisoformat(str(started_at_time)) if started_at_time else None
+            datetime.fromisoformat(str(started_at_time))
+            if started_at_time
+            else None
         )
         # qualified_usage
-        qu_objects = graph.objects(node, cls._get_rdf_property("qualified_usage"))
+        qu_objects = graph.objects(
+            node, cls._get_rdf_property("qualified_usage")
+        )
         qualified_usage = [Usage.from_graph(qu, graph) for qu in qu_objects]
         if not qualified_usage:
             qualified_usage = None
         elif len(qualified_usage) == 1:
             qualified_usage = qualified_usage[0]
         # started_at_time
-        started_at_time = graph.value(node, cls._get_rdf_property("started_at_time"))
+        started_at_time = graph.value(
+            node, cls._get_rdf_property("started_at_time")
+        )
         started_at_time = (
-            datetime.fromisoformat(str(started_at_time)) if started_at_time else None
+            datetime.fromisoformat(str(started_at_time))
+            if started_at_time
+            else None
         )
         # used
         used = cls._entities_from_graph_property(
@@ -533,7 +572,9 @@ class InstantaneousEvent(Entity, frozen=True):
     IRI: http://www.w3.org/ns/prov#InstantaneousEvent
     """
 
-    rdf_type: RDFType = Entity.get_rdf_type(extra=str(rdflib.PROV.InstantaneousEvent))
+    rdf_type: RDFType = Entity.get_rdf_type(
+        extra=str(rdflib.PROV.InstantaneousEvent)
+    )
 
     at_time: Annotated[
         datetime | None,
@@ -559,7 +600,9 @@ class InstantaneousEvent(Entity, frozen=True):
         at_time = datetime.fromisoformat(str(at_time)) if at_time else None
         # at_location
         at_location = graph.value(node, cls._get_rdf_property("at_location"))
-        at_location = Location.from_graph(at_location, graph) if at_location else None
+        at_location = (
+            Location.from_graph(at_location, graph) if at_location else None
+        )
 
         return InstantaneousEvent(
             **entity_dict,
@@ -633,7 +676,9 @@ class ActivityInfluence(Influence, frozen=True):
     IRI: http://www.w3.org/ns/prov#ActivityInfluence
     """
 
-    rdf_type: RDFType = Influence.get_rdf_type(extra=str(rdflib.PROV.ActivityInfluence))
+    rdf_type: RDFType = Influence.get_rdf_type(
+        extra=str(rdflib.PROV.ActivityInfluence)
+    )
 
     activity: Annotated[
         RDFRef[Activity],
@@ -675,7 +720,9 @@ class AgentInfluence(Influence, frozen=True):
     IRI: http://www.w3.org/ns/prov#AgentInfluence
     """
 
-    rdf_type: RDFType = Influence.get_rdf_type(extra=str(rdflib.PROV.AgentInfluence))
+    rdf_type: RDFType = Influence.get_rdf_type(
+        extra=str(rdflib.PROV.AgentInfluence)
+    )
 
     agent: Annotated[
         RDFRef[Agent],
@@ -717,7 +764,9 @@ class EntityInfluence(Influence, frozen=True):
     IRI: http://www.w3.org/ns/prov#EntityInfluence
     """
 
-    rdf_type: RDFType = Influence.get_rdf_type(extra=str(rdflib.PROV.EntityInfluence))
+    rdf_type: RDFType = Influence.get_rdf_type(
+        extra=str(rdflib.PROV.EntityInfluence)
+    )
 
     entity: Annotated[
         RDFRef[Entity],
@@ -759,7 +808,9 @@ class Association(AgentInfluence, frozen=True):
     IRI: http://www.w3.org/ns/prov#Association
     """
 
-    rdf_type: RDFType = AgentInfluence.get_rdf_type(extra=str(rdflib.PROV.Association))
+    rdf_type: RDFType = AgentInfluence.get_rdf_type(
+        extra=str(rdflib.PROV.Association)
+    )
 
     had_plan: Annotated[
         RDFRef["Plan"] | None,
@@ -774,7 +825,9 @@ class Association(AgentInfluence, frozen=True):
         node, _ = cls._node_id(id)
 
         # entity
-        influence_dict: dict = AgentInfluence.from_graph(node, graph).model_dump()
+        influence_dict: dict = AgentInfluence.from_graph(
+            node, graph
+        ).model_dump()
         influence_dict.pop("rdf_type")
         # had_plan
         had_plan = cls._entity_from_graph_property(
@@ -800,14 +853,20 @@ class Generation(ActivityInfluence, InstantaneousEvent, frozen=True):
         node, _ = cls._node_id(id)
 
         # influence
-        influence_dict: dict = ActivityInfluence.from_graph(node, graph).model_dump()
+        influence_dict: dict = ActivityInfluence.from_graph(
+            node, graph
+        ).model_dump()
         influence_dict.pop("rdf_type")
         # event
-        event_dict: dict = InstantaneousEvent.from_graph(node, graph).model_dump()
+        event_dict: dict = InstantaneousEvent.from_graph(
+            node, graph
+        ).model_dump()
         event_dict.pop("rdf_type")
         # merge
         influence_dict["rdf_bindings"].extend(event_dict["rdf_bindings"])
-        distinct_keys = set(event_dict.keys()).difference(influence_dict.keys())
+        distinct_keys = set(event_dict.keys()).difference(
+            influence_dict.keys()
+        )
         for k in distinct_keys:
             influence_dict[k] = event_dict[k]
 
@@ -821,21 +880,29 @@ class Usage(EntityInfluence, InstantaneousEvent, frozen=True):
     IRI: http://www.w3.org/ns/prov#Usage
     """
 
-    rdf_type: RDFType = EntityInfluence.get_rdf_type(extra=str(rdflib.PROV.Usage))
+    rdf_type: RDFType = EntityInfluence.get_rdf_type(
+        extra=str(rdflib.PROV.Usage)
+    )
 
     @classmethod
     def from_graph(cls, id: str | rdflib.Node, graph: rdflib.Graph):
         node, _ = cls._node_id(id)
 
         # influence
-        influence_dict: dict = EntityInfluence.from_graph(node, graph).model_dump()
+        influence_dict: dict = EntityInfluence.from_graph(
+            node, graph
+        ).model_dump()
         influence_dict.pop("rdf_type")
         # event
-        event_dict: dict = InstantaneousEvent.from_graph(node, graph).model_dump()
+        event_dict: dict = InstantaneousEvent.from_graph(
+            node, graph
+        ).model_dump()
         event_dict.pop("rdf_type")
         # merge
         influence_dict["rdf_bindings"].extend(event_dict["rdf_bindings"])
-        distinct_keys = set(event_dict.keys()).difference(influence_dict.keys())
+        distinct_keys = set(event_dict.keys()).difference(
+            influence_dict.keys()
+        )
         for k in distinct_keys:
             influence_dict[k] = event_dict[k]
 
