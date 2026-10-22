@@ -2,20 +2,26 @@
 VLIZ Ontology and Application Profile
 """
 
-import rdflib
-from typing import Annotated
 from collections.abc import Sequence
+from typing import Annotated
 
-from . import dcatap
-from . import prov
+import rdflib
+
+from . import dcatap, prov
 
 # The imports on the next line are needed at runtime
-from .dcatap import Attribution, Distribution, Relationship, Location, PeriodOfTime # noqa: F401
+from .dcatap import (  # noqa: F401
+    Attribution,
+    Distribution,
+    Location,
+    PeriodOfTime,
+    Relationship,
+)
+from .prov import Activity, Agent, Generation  # noqa: F401
 from .rdf import RDFRef, RDFType
 
 # The imports on the next line are needed at runtime
 from .rdfs import Resource  # noqa: F401
-from .prov import Agent, Activity, Generation  # noqa: F401
 from .ssn import Property
 
 
@@ -28,14 +34,15 @@ def _rdf_type() -> RDFType:
         extra="http://www.w3.org/ns/sosa/ObservationCollection"
     )
     dcatap_rdf_types = (
-        dcatap_rdf_type if isinstance(dcatap_rdf_type, list) else [dcatap_rdf_type]
+        dcatap_rdf_type
+        if isinstance(dcatap_rdf_type, list)
+        else [dcatap_rdf_type]
     )
 
     return dcatap_rdf_types + prov_rdf_types
 
 
 class Dataset(dcatap.Dataset, prov.Entity, frozen=True):
-
     rdf_type: RDFType = _rdf_type()
 
     observed_property: Annotated[
@@ -60,7 +67,8 @@ class Dataset(dcatap.Dataset, prov.Entity, frozen=True):
             node, cls._get_rdf_property("observed_property")
         )
         observed_property = [
-            Property.from_graph(obj, graph) for obj in observed_property_objects
+            Property.from_graph(obj, graph)
+            for obj in observed_property_objects
         ]
 
         # Dataset

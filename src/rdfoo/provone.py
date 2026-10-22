@@ -6,16 +6,28 @@ Documentation: https://jenkins-1.dataone.org/jenkins/job/ProvONE-Documentation-1
 Namespace: ``http://purl.dataone.org/provone/2015/01/15/ontology#``
 """
 
+from collections.abc import Sequence
+from typing import Annotated
+
 import rdflib
-
 from pydantic import BeforeValidator, PlainSerializer
-from typing import Annotated, Sequence
 
-from .prov import Activity, Agent, Association, Entity, Generation, Plan, Usage # fmt: skip # noqa: F401
-from .prov import entity_serializer, build_entity_validator
+from .prov import (  # fmt: skip # noqa: F401
+    Activity,
+    Agent,
+    Association,
+    Entity,
+    Generation,
+    Plan,
+    Usage,
+    build_entity_validator,
+    entity_serializer,
+)
 from .rdf import RDFRef, RDFType, RDFURIRef
 
-PROVONE = rdflib.Namespace("http://purl.dataone.org/provone/2015/01/15/ontology#")
+PROVONE = rdflib.Namespace(
+    "http://purl.dataone.org/provone/2015/01/15/ontology#"
+)
 
 
 #
@@ -76,7 +88,9 @@ class Controller(Entity, frozen=True):
         version = graph.value(node, cls._get_rdf_property("version"))
         version = str(version) if version else None
 
-        return Controller(**entity_dict, controls=controls, url=url, version=version)
+        return Controller(
+            **entity_dict, controls=controls, url=url, version=version
+        )
 
 
 class Execution(Activity, frozen=True):
@@ -107,7 +121,9 @@ class Execution(Activity, frozen=True):
         activity_dict.pop("rdf_type")
         # was_part_of
         was_part_of = graph.value(node, cls._get_rdf_property("was_part_of"))
-        was_part_of = Execution.from_graph(was_part_of, graph) if was_part_of else None
+        was_part_of = (
+            Execution.from_graph(was_part_of, graph) if was_part_of else None
+        )
 
         return Execution(**activity_dict, was_part_of=was_part_of)
 
@@ -172,9 +188,13 @@ class Program(Plan, frozen=True):
             graph, node, cls._get_rdf_property("has_sub_program"), Program
         )
         # is_controlled_by
-        is_controlled_by = graph.value(node, cls._get_rdf_property("is_controlled_by"))
+        is_controlled_by = graph.value(
+            node, cls._get_rdf_property("is_controlled_by")
+        )
         is_controlled_by = (
-            Controller.from_graph(is_controlled_by, graph) if is_controlled_by else None
+            Controller.from_graph(is_controlled_by, graph)
+            if is_controlled_by
+            else None
         )
         # is_sub_program_of
         is_sub_program_of = cls._entity_from_graph_property(

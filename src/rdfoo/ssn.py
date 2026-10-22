@@ -8,8 +8,9 @@ Namespace for SSN terms: ``http://www.w3.org/ns/ssn/``
 Namespace for SOSA terms: ``http://www.w3.org/ns/sosa/``
 """
 
-import rdflib
 from typing import Annotated
+
+import rdflib
 
 from .rdf import RDF, RDFType
 
@@ -37,8 +38,10 @@ class Property(RDF, frozen=True):
         node, rdf_id = cls._node_id(id)
         label = graph.value(node, rdflib.RDFS.label)
         description = graph.value(node, rdflib.DCTERMS.description)
-        return Property(**{
-            "rdf_id": rdf_id,
-            "label": label,
-            "description": description,
-        })
+        return Property(
+            **{
+                "rdf_id": rdf_id,
+                "label": label,
+                "description": description,
+            }
+        )

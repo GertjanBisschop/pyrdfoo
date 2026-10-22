@@ -4,9 +4,10 @@ RDF Core Object
 
 from abc import abstractmethod
 from collections.abc import Sequence
-from pydantic import BaseModel, ConfigDict, Field
-import rdflib as rdf
 from typing import TypeVar
+
+import rdflib as rdf
+from pydantic import BaseModel, ConfigDict, Field
 
 
 def RDFId(default=None):
@@ -26,6 +27,7 @@ class RDF(BaseModel, frozen=True):
     graph for any of its subclasses. It also provides the `from_graph` method to
     construct an object described in a graph.
     """
+
     model_config = ConfigDict(
         validate_assignment=True,
         validate_by_name=True,
@@ -37,7 +39,11 @@ class RDF(BaseModel, frozen=True):
     """[[binding1, namespace1], [binding2, namespace2]]"""
 
     def has_type(self, type: RDFType) -> bool:
-        own_types: list[str] = self.rdf_type if isinstance(self.rdf_type, list) else [self.rdf_type]
+        own_types: list[str] = (
+            self.rdf_type
+            if isinstance(self.rdf_type, list)
+            else [self.rdf_type]
+        )
         check_types: list[str] = type if isinstance(type, list) else [type]
         for t in check_types:
             if t not in own_types:
@@ -87,7 +93,9 @@ class RDF(BaseModel, frozen=True):
 
         return result
 
-    def to_graph(self, node: rdf.Node | None = None, graph: rdf.Graph | None = None) -> rdf.Graph:
+    def to_graph(
+        self, node: rdf.Node | None = None, graph: rdf.Graph | None = None
+    ) -> rdf.Graph:
         if graph is None:
             graph = rdf.Graph()
 
@@ -95,7 +103,13 @@ class RDF(BaseModel, frozen=True):
             if v is None:
                 pass
             elif isinstance(v, RDFURIRef):
-                graph.add((parent, rdf.URIRef(self._get_rdf_annotation(f)), rdf.URIRef(v.uri)))
+                graph.add(
+                    (
+                        parent,
+                        rdf.URIRef(self._get_rdf_annotation(f)),
+                        rdf.URIRef(v.uri),
+                    )
+                )
             elif isinstance(v, RDF):
                 if v.rdf_id is not None:
                     n = rdf.URIRef(v.rdf_id)
@@ -104,12 +118,24 @@ class RDF(BaseModel, frozen=True):
                 graph.add((parent, rdf.URIRef(self._get_rdf_annotation(f)), n))
                 v.to_graph(n, graph)
             elif isinstance(v, str):
-                graph.add((parent, rdf.URIRef(self._get_rdf_annotation(f)), rdf.Literal(v)))
+                graph.add(
+                    (
+                        parent,
+                        rdf.URIRef(self._get_rdf_annotation(f)),
+                        rdf.Literal(v),
+                    )
+                )
             elif isinstance(v, Sequence):
                 for vi in v:
                     handle_value(graph, parent, vi)
             else:
-                graph.add((parent, rdf.URIRef(self._get_rdf_annotation(f)), rdf.Literal(v)))
+                graph.add(
+                    (
+                        parent,
+                        rdf.URIRef(self._get_rdf_annotation(f)),
+                        rdf.Literal(v),
+                    )
+                )
 
         # @id
         if node is not None:
@@ -141,8 +167,7 @@ class RDF(BaseModel, frozen=True):
 
     @classmethod
     @abstractmethod
-    def from_graph[T](cls: T, id: str | rdf.Node, graph: rdf.Graph) -> T:
-        ...
+    def from_graph[T](cls: T, id: str | rdf.Node, graph: rdf.Graph) -> T: ...
 
     @staticmethod
     def _node_id(id: str | rdf.Node) -> tuple[rdf.Node, str | None]:

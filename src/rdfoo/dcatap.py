@@ -7,16 +7,19 @@ Namespace: ``http://data.europa.eu/r5r/``
 """
 
 from collections.abc import Sequence
-import rdflib
 from typing import Annotated
 
+import rdflib
+
 from . import dcat
-from .dcat import Agent
+
 # The imports on the next line are needed at runtime
-from .dcat import Relationship  # noqa: F401
+from .dcat import (
+    Agent,
+    Relationship,  # noqa: F401
+)
 from .rdf import RDF, RDFRef, RDFType
 from .rdfs import Resource
-
 
 #
 # Main Entities
@@ -34,20 +37,20 @@ class Catalogue(dcat.Catalogue, frozen=True):
     description: Annotated[
         str | Sequence[str],
         {"rdf_property": "http://purl.org/dc/terms/description"},
-    ] = ... # type: ignore
+    ] = ...  # type: ignore
     """A free-text account of the Catalogue."""
 
     publisher: Annotated[
         RDFRef[Agent],
         {"rdf_property": "http://purl.org/dc/terms/publisher"},
-    ] = ... # type: ignore
+    ] = ...  # type: ignore
     """An entity (organisation) responsible for making the Catalogue
     available."""
 
     title: Annotated[
         str | Sequence[str],
         {"rdf_property": "http://purl.org/dc/terms/title"},
-    ] = ... # type: ignore
+    ] = ...  # type: ignore
     """A name given to the Catalogue."""
 
     @classmethod
@@ -69,7 +72,7 @@ class Dataset(dcat.Dataset, frozen=True):
     description: Annotated[
         str | Sequence[str],
         {"rdf_property": "http://purl.org/dc/terms/description"},
-    ] = ... # type: ignore
+    ] = ...  # type: ignore
 
     qualified_attribution: Annotated[
         Sequence[RDFRef["Attribution"]],
@@ -84,7 +87,7 @@ class Dataset(dcat.Dataset, frozen=True):
     title: Annotated[
         str | Sequence[str],
         {"rdf_property": "http://purl.org/dc/terms/title"},
-    ] = ... # type: ignore
+    ] = ...  # type: ignore
 
     @classmethod
     def from_graph(cls, id: str | rdflib.Node, graph: rdflib.Graph):
@@ -153,12 +156,20 @@ class Attribution(RDF, frozen=True):
         node, rdf_id = cls._node_id(id)
         # start_date
         agent_obj = graph.value(node, cls._get_rdf_property("agent"))
-        agent = Agent.from_graph(agent_obj, graph) if agent_obj is not None else None
+        agent = (
+            Agent.from_graph(agent_obj, graph)
+            if agent_obj is not None
+            else None
+        )
         if agent is None:
             raise Exception("Attribution must have an agent")
         # end_date
         hadRole_obj = graph.value(node, cls._get_rdf_property("hadRole"))
-        hadRole = Role.from_graph(hadRole_obj, graph) if hadRole_obj is not None else None
+        hadRole = (
+            Role.from_graph(hadRole_obj, graph)
+            if hadRole_obj is not None
+            else None
+        )
         # Attribution
         return Attribution(
             rdf_id=rdf_id,
@@ -189,4 +200,3 @@ class Role(RDF, frozen=True):
     def from_graph(cls, id: str | rdflib.Node, graph: rdflib.Graph):
         _, rdf_id = cls._node_id(id)
         return Role(rdf_id=rdf_id)
-

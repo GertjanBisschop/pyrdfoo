@@ -12,7 +12,6 @@ from .rdf import RDF, RDFType
 
 
 class Agent(RDF, frozen=True):
-
     rdf_type: RDFType = "http://xmlns.com/foaf/0.1/Agent"
 
     @classmethod
