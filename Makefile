@@ -13,7 +13,7 @@ test-all: ## Run repository tests
 	@uv run pytest
 
 docs: ## Build the documentation
-	@uv run sphinx-build -E -a -b html ./docs/source ./docs/build/html
+	@uv run --group dev sphinx-build -E -a -b html ./docs/source ./docs/build/html
 
 clean: ## Clean documentation artifacts
 	-rm -r ./docs/source/modules
